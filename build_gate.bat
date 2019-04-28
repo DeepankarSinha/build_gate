@@ -1,0 +1,77 @@
+@echo off
+Setlocal enabledelayedexpansion
+
+echo _______________________________________________________________
+echo    ____                                  __                   
+echo     /   )           ,   /       /       /    )                 
+echo ---/__ /---------------/----__-/-------/---------__--_/_----__-
+echo   /    )   /   /  /   /   /   /       /  --,   /   ) /    /___)
+echo _/____/___(___(__/___/___(___/_______(____/___(___(_(_ __(___ _
+echo  V: 0.0.1
+echo  For this to work the head commit must be a merge commit!
+
+::Configuration
+set WHEN_I_FIND=".ts" 
+
+set I_EXECUTE[0]= "echo Found ts"
+::End Configuration
+
+
+GOTO :Main
+
+:SetLastCommitHash
+for /f %%i in ('git rev-parse HEAD') do set "%~1=%%i"
+Exit /b 0
+
+:SetMergeCommitRange
+for /f "delims=" %%i in ('git show --no-patch --format^="%%P" HEAD') do set hashes=%%i
+set %~1=%hashes:~0,40%
+set %~2=%hashes:~41,40%
+Exit /b 0
+
+:SetFilesModified
+for /f %%i in ('git diff --name-only %~1 %~2') do call set "f=%%f%%,%%i"
+set %~3=%f:~1%
+Exit /b 0
+
+:Search
+Echo."%~1" | findstr "%~2">nul && (
+    echo Echo."%~1" "%~2"
+    set %~3=TRUE
+)
+Exit /b 0
+
+:Run
+echo CMD:%~1
+%~1
+Exit /b 0
+
+GOTO :End
+
+:Main 
+
+Call :SetLastCommitHash commitHash
+echo Hash: %commitHash%
+
+Call :SetMergeCommitRange hash1 hash2
+echo Hash1: %hash1%
+echo Hash2: %hash2%
+
+Call :SetFilesModified %hash2% %hash1% files
+echo Files: %files%
+
+set /a count=0
+for /f %%a in (%WHEN_I_FIND%) do (
+    echo FIND: %%a
+    for /f "delims=," %%b in ("%files%") do (
+        echo FILE: %%b
+        Call :Search "%%b" "%%a" flg
+        echo FLAG: !flg!
+        call echo EXE: %count% %%I_EXECUTE[%count%]%%
+        if defined flg ( Call :Run %%I_EXECUTE[%count%]%% )
+    )
+
+    set /a count+=1
+)
+
+:End
