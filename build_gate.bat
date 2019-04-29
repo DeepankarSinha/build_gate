@@ -83,14 +83,9 @@ if defined WHEN_I_FIND[%count%] (
     Call set a=%%WHEN_I_FIND[%count%]%%
 
     Call :Search "%files%" "%%a%%" flag
-
     if !flag!==TRUE ( 
         Call :Run "%%I_EXECUTE[%count%]%%"
         Call set found=found+1
-    )
-
-    if %COUNT%==2 ( 
-        GOTO :End 
     )
 
     set /a "count+=1"
